@@ -26,41 +26,55 @@ class ReflectionExtract(BaseModel):
     )
 
     @classmethod
+    def _get_reason_code(
+        cls,
+        prompts: Dict[str, Any],
+        reflection_type: str,
+        letter_grade: Literal["A", "B", "C"],
+    ) -> str:
+        """Get the reason code for a specific reflection type and rating from the prompts configuration."""
+        try:
+            return prompts["respond_score"]["reason_codes"][reflection_type][
+                letter_grade
+            ]
+        except KeyError:
+            raise ValueError(
+                f"Invalid reflection type '{reflection_type}' or rating '{letter_grade}'"
+            )
+
+    @classmethod
+    def _create_reflections_from_grades(
+        cls, letter_grades: list[Literal["A", "B", "C"]], prompts: Dict[str, Any]
+    ) -> tuple[Reflection, Reflection, Reflection]:
+        """Create the three reflection objects from letter grades."""
+        completeness_rating, accuracy_rating, reasoning_rating = letter_grades
+
+        return (
+            Reflection(
+                rating=completeness_rating,
+                reason=cls._get_reason_code(
+                    prompts, "completeness", completeness_rating
+                ),
+            ),
+            Reflection(
+                rating=accuracy_rating,
+                reason=cls._get_reason_code(prompts, "accuracy", accuracy_rating),
+            ),
+            Reflection(
+                rating=reasoning_rating,
+                reason=cls._get_reason_code(prompts, "reasoning", reasoning_rating),
+            ),
+        )
+
+    @classmethod
     def from_letter_grades(
         cls, letter_grades: list[Literal["A", "B", "C"]], prompts: Dict[str, Any]
     ) -> "ReflectionExtract":
         """Create ReflectionExtract from letter grades and prompts configuration."""
-        completeness_rating = letter_grades[0]
-        accuracy_rating = letter_grades[1]
-        reasoning_rating = letter_grades[2]
-
-        def get_reason_code(
-            reflection_type: str, letter_grade: Literal["A", "B", "C"]
-        ) -> str:
-            """Get the reason code for a specific reflection type and rating from the prompts configuration."""
-            try:
-                return prompts["respond_score"]["reason_codes"][reflection_type][
-                    letter_grade
-                ]
-            except KeyError:
-                raise ValueError(
-                    f"Invalid reflection type '{reflection_type}' or rating '{letter_grade}'"
-                )
-
-        return cls(
-            completeness=Reflection(
-                rating=completeness_rating,
-                reason=get_reason_code("completeness", completeness_rating),
-            ),
-            accuracy=Reflection(
-                rating=accuracy_rating,
-                reason=get_reason_code("accuracy", accuracy_rating),
-            ),
-            reasoning=Reflection(
-                rating=reasoning_rating,
-                reason=get_reason_code("reasoning", reasoning_rating),
-            ),
+        completeness, accuracy, reasoning = cls._create_reflections_from_grades(
+            letter_grades, prompts
         )
+        return cls(completeness=completeness, accuracy=accuracy, reasoning=reasoning)
 
 
 class ScoredReflection(ReflectionExtract):
@@ -92,13 +106,7 @@ class ScoredReflection(ReflectionExtract):
         """Create ScoredReflection from letter grades and prompts configuration."""
         base_extract = ReflectionExtract.from_letter_grades(letter_grades, prompts)
         numerical_score = cls.calculate_numerical_score(letter_grades)
-
-        return cls(
-            completeness=base_extract.completeness,
-            accuracy=base_extract.accuracy,
-            reasoning=base_extract.reasoning,
-            numerical_score=numerical_score,
-        )
+        return cls(**base_extract.model_dump(), numerical_score=numerical_score)
 
     @classmethod
     def from_reflection_extract(
@@ -111,10 +119,4 @@ class ScoredReflection(ReflectionExtract):
             reflection_extract.reasoning.rating,
         ]
         numerical_score = cls.calculate_numerical_score(letter_grades)
-
-        return cls(
-            completeness=reflection_extract.completeness,
-            accuracy=reflection_extract.accuracy,
-            reasoning=reflection_extract.reasoning,
-            numerical_score=numerical_score,
-        )
+        return cls(**reflection_extract.model_dump(), numerical_score=numerical_score)
