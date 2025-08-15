@@ -7,28 +7,29 @@ from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
-from core.config import MODEL
-from core.exceptions import (
+from .exceptions import (
     InvalidLetterGrade,
     LetterGradesNotThreeCharactersLong,
     NoLetterGradesFound,
     RetryException,
 )
-from core.types import Query, ScoredReflection
+from .types import Query, ScoredReflection
 
 
 class RespondAndScore:
-    def __init__(self, async_openai_client: AsyncOpenAI) -> None:
+    def __init__(self, async_openai_client: AsyncOpenAI, model: str = "gpt-4o-mini") -> None:
         self.async_client = async_openai_client
         self.prompts = self._load_prompts()
+        self.model = model
+
 
     def _load_prompts(self) -> Dict[str, Any]:
         """Load prompts from the centralized YAML file."""
         try:
-            with open("core/prompts.yaml", "r", encoding="utf-8") as file:
+            with open("core/answer_and_reflect/prompts.yaml", "r", encoding="utf-8") as file:
                 return yaml.safe_load(file)
         except FileNotFoundError:
-            raise FileNotFoundError("Prompts file not found at core/prompts.yaml")
+            raise FileNotFoundError("Prompts file not found at core/answer_and_reflect/prompts.yaml")
         except yaml.YAMLError as e:
             raise ValueError(f"Error parsing prompts YAML: {e}")
 
@@ -61,7 +62,7 @@ class RespondAndScore:
         try:
             response = await self.async_client.chat.completions.create(
                 messages=[{"role": "user", "content": user_query.query}],
-                model=MODEL,
+                model=self.model,
             )
             print(response)
             return response
@@ -104,7 +105,7 @@ class RespondAndScore:
                     {"role": "system", "content": concise_system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                model=MODEL,
+                model=self.model,
             )
             print(response)
         except NoLetterGradesFound:
