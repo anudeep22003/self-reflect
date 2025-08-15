@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from core.answer_and_reflect.respond_score import RespondAndScore
 from core.answer_and_reflect.types import Query, ScoredReflection
-from core.config import MODEL
+from core.config import MODEL, PROMPTS_FILE
 from core.intelligence import get_async_openai_client
 
 router = APIRouter(prefix="/chat")
@@ -30,7 +30,9 @@ async def chat_with_score(
     - Static reasoning (reasoning is generated from the yaml file)
     - Error handling (errors manually checked and handled)
     """
-    worker = RespondAndScore(async_openai_client=async_openai_client, model=MODEL)
+    worker = RespondAndScore(
+        async_openai_client=async_openai_client, model=MODEL, prompts_file=PROMPTS_FILE
+    )
     base_response, reflection_response = await worker.answer_and_self_reflect(
         user_query
     )
@@ -52,7 +54,9 @@ async def chat_with_score_reflect_and_reason(
 
     Here we are using insructor to do scructured extraction so the reasoning is supplied by the AI.
     """
-    worker = RespondAndScore(async_openai_client=async_openai_client, model=MODEL)
+    worker = RespondAndScore(
+        async_openai_client=async_openai_client, model=MODEL, prompts_file=PROMPTS_FILE
+    )
     (
         base_response,
         reflection_response,

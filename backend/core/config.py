@@ -15,6 +15,6 @@ if OPENAI_API_KEY is None:
 
 MODEL = os.getenv("MODEL", "gpt-4o-mini")
 
-MAX_RETRIES = os.getenv("MAX_RETRIES", 1)
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", 2))
 
 PROMPTS_FILE = os.getenv("PROMPTS_FILE", "core/answer_and_reflect/prompts.yaml")

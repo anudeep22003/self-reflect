@@ -16,6 +16,8 @@ from .exceptions import (
 )
 from .types import Query, ReflectionExtract, ScoredReflection
 
+from core.config import MAX_RETRIES
+
 
 class RespondAndScore:
     def __init__(
@@ -23,12 +25,10 @@ class RespondAndScore:
         async_openai_client: AsyncOpenAI,
         model: str = "gpt-4o-mini",
         prompts_file: str = "core/answer_and_reflect/prompts.yaml",
-        max_retries: int = 1,
     ) -> None:
         self.async_client = async_openai_client
         self.prompts = self._load_prompts(prompts_file)
         self.model = model
-        self.max_retries = max_retries
         self.prompts_file = prompts_file
 
     def _load_prompts(self, prompts_file: str) -> Dict[str, Any]:
@@ -69,7 +69,7 @@ class RespondAndScore:
 
     @retry(
         retry=retry_if_exception_type(RetryException),
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(MAX_RETRIES),
         reraise=True,
     )
     async def answer(self, user_query: Query) -> ChatCompletion:
@@ -79,7 +79,6 @@ class RespondAndScore:
                 messages=[{"role": "user", "content": user_query.query}],
                 model=self.model,
             )
-            print(response)
             return response
         except openai.APIConnectionError as e:
             raise HTTPException(status_code=500, detail=f"API connection error: {e}")
@@ -100,7 +99,7 @@ class RespondAndScore:
 
     @retry(
         retry=retry_if_exception_type(RetryException),
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(MAX_RETRIES),
         reraise=True,
     )
     async def self_reflect_concisely(
@@ -156,7 +155,7 @@ class RespondAndScore:
 
     @retry(
         retry=retry_if_exception_type(RetryException),
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(MAX_RETRIES),
         reraise=True,
     )
     async def self_reflect_with_reasoning(
