@@ -226,10 +226,29 @@ Edit `core/answer_and_reflect/prompts.yaml` to modify:
 - Reason codes for different ratings
 - User message templates
 
+## 📝 Logging and Monitoring
+
+The application now includes comprehensive logging capabilities:
+
+### Centralized Logging Setup
+- **Log Format**: Timestamped entries with logger name, level, and message
+- **Output Destinations**: Both console (stdout) and file (`app.log`)
+- **Log Levels**: DEBUG level for application code, WARNING for external libraries
+
+### Logging Features
+- **Application Lifecycle**: Startup logging configuration in `main.py:12-29`
+- **Answer Generation**: Info-level logging for question answering (`core/answer_and_reflect/respond_score.py:78`)
+- **Self-Reflection**: Info-level logging for reflection processes (`core/answer_and_reflect/respond_score.py:110`, `166`)
+- **Debug Information**: Detailed logging of prompts and API responses for troubleshooting
+
+### External Library Logging
+Reduced verbosity for external dependencies:
+- `uvicorn`, `fastapi`, `openai`, `httpx`, `httpcore` set to WARNING level
+
 ## 🚦 Production Considerations
 
 - **Rate Limiting**: Implement rate limiting for production use
 - **Authentication**: Add API key authentication
-- **Monitoring**: Add logging and metrics collection
+- **Monitoring**: Comprehensive logging now available with centralized configuration
 - **Caching**: Consider caching for repeated queries
 - **Error Reporting**: Integrate error tracking service

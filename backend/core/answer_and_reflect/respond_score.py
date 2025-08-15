@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Literal, cast
 
 import instructor
@@ -30,6 +31,7 @@ class RespondAndScore:
         self.prompts = self._load_prompts(prompts_file)
         self.model = model
         self.prompts_file = prompts_file
+        self.logger = logging.getLogger(__name__)
 
     def _load_prompts(self, prompts_file: str) -> Dict[str, Any]:
         """Load prompts from the centralized YAML file."""
@@ -73,7 +75,7 @@ class RespondAndScore:
         reraise=True,
     )
     async def answer(self, user_query: Query) -> ChatCompletion:
-        print("answering the question")
+        self.logger.info("Answering the question")
         try:
             response = await self.async_client.chat.completions.create(
                 messages=[{"role": "user", "content": user_query.query}],
@@ -105,14 +107,14 @@ class RespondAndScore:
     async def self_reflect_concisely(
         self, query: Query, original_answer: ChatCompletion
     ) -> ScoredReflection:
-        print("self-reflecting")
+        self.logger.info("Self-reflecting")
         concise_system_prompt = self.system_prompt
         concise_system_prompt += self.concise_addition
-        print(concise_system_prompt)
+        self.logger.debug(f"System prompt: {concise_system_prompt}")
         user_message = self.user_message_template.format(
             query=query.query, answer=original_answer.choices[0].message.content
         )
-        print(user_message)
+        self.logger.debug(f"User message: {user_message}")
         try:
             response = await self.async_client.chat.completions.create(
                 messages=[
@@ -121,7 +123,7 @@ class RespondAndScore:
                 ],
                 model=self.model,
             )
-            print(response)
+            self.logger.debug(f"API response: {response}")
         except NoLetterGradesFound:
             raise RetryException()
         except LetterGradesNotThreeCharactersLong:
@@ -161,7 +163,7 @@ class RespondAndScore:
     async def self_reflect_with_reasoning(
         self, query: Query, original_answer: ChatCompletion
     ) -> ScoredReflection:
-        print("self-reflecting with reasoning")
+        self.logger.info("Self-reflecting with reasoning")
         instructor_client = instructor.from_openai(self.async_client)
 
         user_message = self.user_message_template.format(
