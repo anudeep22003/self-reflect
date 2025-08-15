@@ -13,4 +13,8 @@ if OPENAI_API_KEY is None:
     raise Exception("Missing openai api key")
 
 
-MODEL = "gpt-4o-mini"
+MODEL = os.getenv("MODEL", "gpt-4o-mini")
+
+MAX_RETRIES = os.getenv("MAX_RETRIES", 1)
+
+PROMPTS_FILE = os.getenv("PROMPTS_FILE", "core/answer_and_reflect/prompts.yaml")

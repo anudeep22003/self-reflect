@@ -1,5 +1,6 @@
 from typing import Any, Dict, Literal, cast
 
+import instructor
 import openai
 import yaml  # type: ignore
 from fastapi import HTTPException
@@ -13,23 +14,30 @@ from .exceptions import (
     NoLetterGradesFound,
     RetryException,
 )
-from .types import Query, ScoredReflection
+from .types import Query, ReflectionExtract, ScoredReflection
 
 
 class RespondAndScore:
-    def __init__(self, async_openai_client: AsyncOpenAI, model: str = "gpt-4o-mini") -> None:
+    def __init__(
+        self,
+        async_openai_client: AsyncOpenAI,
+        model: str = "gpt-4o-mini",
+        prompts_file: str = "core/answer_and_reflect/prompts.yaml",
+        max_retries: int = 1,
+    ) -> None:
         self.async_client = async_openai_client
-        self.prompts = self._load_prompts()
+        self.prompts = self._load_prompts(prompts_file)
         self.model = model
+        self.max_retries = max_retries
+        self.prompts_file = prompts_file
 
-
-    def _load_prompts(self) -> Dict[str, Any]:
+    def _load_prompts(self, prompts_file: str) -> Dict[str, Any]:
         """Load prompts from the centralized YAML file."""
         try:
-            with open("core/answer_and_reflect/prompts.yaml", "r", encoding="utf-8") as file:
+            with open(prompts_file, "r", encoding="utf-8") as file:
                 return yaml.safe_load(file)
         except FileNotFoundError:
-            raise FileNotFoundError("Prompts file not found at core/answer_and_reflect/prompts.yaml")
+            raise FileNotFoundError(f"Prompts file not found at {prompts_file}")
         except yaml.YAMLError as e:
             raise ValueError(f"Error parsing prompts YAML: {e}")
 
@@ -50,6 +58,13 @@ class RespondAndScore:
     ) -> tuple[ChatCompletion, ScoredReflection]:
         answer = await self.answer(user_query)
         self_reflection = await self.self_reflect_concisely(user_query, answer)
+        return answer, self_reflection
+
+    async def answer_and_self_reflect_with_reasoning(
+        self, user_query: Query
+    ) -> tuple[ChatCompletion, ScoredReflection]:
+        answer = await self.answer(user_query)
+        self_reflection = await self.self_reflect_with_reasoning(user_query, answer)
         return answer, self_reflection
 
     @retry(
@@ -138,3 +153,31 @@ class RespondAndScore:
                 raise InvalidLetterGrade()
 
         return cast(list[Literal["A", "B", "C"]], letter_grades)
+
+    @retry(
+        retry=retry_if_exception_type(RetryException),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
+    async def self_reflect_with_reasoning(
+        self, query: Query, original_answer: ChatCompletion
+    ) -> ScoredReflection:
+        print("self-reflecting with reasoning")
+        instructor_client = instructor.from_openai(self.async_client)
+
+        user_message = self.user_message_template.format(
+            query=query.query, answer=original_answer.choices[0].message.content
+        )
+        reflection_extract = await instructor_client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            response_model=ReflectionExtract,
+        )
+
+        if reflection_extract is None:
+            raise RetryException()
+
+        return ScoredReflection.from_reflection_extract(reflection_extract)

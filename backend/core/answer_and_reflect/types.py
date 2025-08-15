@@ -8,8 +8,12 @@ class Query(BaseModel):
 
 
 class Reflection(BaseModel):
-    rating: Literal["A", "B", "C"]
-    reason: str = Field(description="The reason for the rating")
+    rating: Literal["A", "B", "C"] = Field(
+        description="The rating for the reflection, with A being the most confident, B being the least confident, and C being the middle confidence."
+    )
+    reason: str = Field(
+        description="Detailed reasoning for the rating, try to come up with underlying assumptions and recreate the process that led to the rating. Use chain of thought if necessary."
+    )
 
 
 class ReflectionExtract(BaseModel):
