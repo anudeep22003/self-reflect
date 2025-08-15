@@ -24,6 +24,12 @@ backend/
 
 ## 🚀 Quick Start
 
+**Note**: Navigate to the `backend/` directory and run all following commands from inside that directory:
+
+```bash
+cd backend
+```
+
 ### 1. Environment Setup
 
 Copy the environment template and configure your OpenAI API key:
@@ -164,6 +170,9 @@ numerical_score = average(completeness, accuracy, reasoning)
 ### Code Quality Tools
 
 ```bash
+# Navigate to backend directory (project root for development)
+cd backend
+
 # Linting and formatting
 ruff check .
 ruff format .
@@ -171,6 +180,48 @@ ruff format .
 # Type checking
 mypy .
 ```
+
+### Testing
+
+The project includes comprehensive test coverage for retry behavior and error handling.
+
+**Note**: Navigate to the `backend/` directory before running tests, as it serves as the project root for development.
+
+#### Running Tests
+
+```bash
+# Navigate to backend directory first
+cd backend
+
+# Run all tests
+pytest
+
+# Run specific test file
+pytest test_retry_behavior.py
+
+# Run with verbose output
+pytest -v test_retry_behavior.py
+```
+
+#### Test Coverage
+
+**Retry Behavior Tests** (`test_retry_behavior.py`):
+- **Answer Generation Retries**: Tests retry logic for OpenAI API failures
+  - `test_answer_retries_on_internal_server_error` - Retries on 500 errors
+  - `test_answer_retries_on_generic_exception` - Retries on generic exceptions
+  - `test_answer_fails_after_max_retries` - Fails after MAX_RETRIES attempts
+
+- **Self-Reflection Retries**: Tests retry logic for reflection processing
+  - `test_self_reflect_retries_on_no_letter_grades_found` - Retries when no grades returned
+  - `test_self_reflect_retries_on_wrong_letter_grades_length` - Retries on invalid grade length
+  - `test_self_reflect_retries_on_invalid_letter_grade` - Retries on invalid grade values
+  - `test_self_reflect_fails_after_max_retries_on_invalid_grades` - Fails after max retries
+  - `test_self_reflect_retries_on_api_exception` - Retries on API errors
+
+- **Advanced Reflection Tests**: Tests retry behavior for reasoning-based reflection
+  - `test_self_reflect_with_reasoning_retries_on_none_response` - Retries when instructor returns None
+
+All tests use proper mocking of OpenAI clients and validate that retry mechanisms work as expected, ensuring system resilience under various failure conditions.
 
 ### Project Structure
 
