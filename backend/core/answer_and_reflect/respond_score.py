@@ -9,6 +9,8 @@ from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
+from core.config import MAX_RETRIES
+
 from .exceptions import (
     InvalidLetterGrade,
     LetterGradesNotThreeCharactersLong,
@@ -16,8 +18,6 @@ from .exceptions import (
     RetryException,
 )
 from .types import Query, ReflectionExtract, ScoredReflection
-
-from core.config import MAX_RETRIES
 
 
 class RespondAndScore:
@@ -124,6 +124,7 @@ class RespondAndScore:
                 model=self.model,
             )
             self.logger.debug(f"API response: {response}")
+            letter_grades = self.check_veracity_of_concise_reflection(response)
         except NoLetterGradesFound:
             raise RetryException()
         except LetterGradesNotThreeCharactersLong:
@@ -133,7 +134,6 @@ class RespondAndScore:
         except Exception:
             raise RetryException()
 
-        letter_grades = self.check_veracity_of_concise_reflection(response)
         return ScoredReflection.from_letter_grades(letter_grades, self.prompts)
 
     def check_veracity_of_concise_reflection(
