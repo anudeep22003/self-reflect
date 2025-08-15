@@ -2,6 +2,23 @@
 
 A FastAPI backend service that provides AI responses with self-reflection and confidence scoring. The system evaluates AI-generated answers across three dimensions: completeness, accuracy, and reasoning quality.
 
+## 🎬 Quick Demo
+
+Want to see the system in action? Run our interactive demo script:
+
+1. **Start the backend server** (see Quick Start section below for setup):
+   ```bash
+   cd backend
+   uvicorn main:app --reload --port 8087
+   ```
+
+2. **Run the demo script**:
+   ```bash
+   ./scripts/run_demo.sh
+   ```
+
+The demo will test both API endpoints with sample questions and display beautifully formatted results showing AI responses and self-reflection scores.
+
 ## 🏗️ Architecture Overview
 
 ```
