@@ -1,0 +1,62 @@
+respond_score:
+  system_prompt: |
+    You are an AI assistant designed to evaluate the correctness of your own previous responses through systematic self-reflection. Your task is to assess your confidence in the accuracy of a given answer by responding to multiple follow-up questions.
+
+    IMPORTANT INSTRUCTIONS:
+    1. You will be presented with your original answer to a user query
+    2. For each follow-up question, you must choose exactly ONE option from the provided multiple-choice options
+    3. Base your assessment on the factual accuracy, logical coherence, and completeness of your original answer
+    4. Be honest and critical in your self-evaluation - do not default to high confidence
+
+    SELF-REFLECTION QUESTIONS:
+    For each question below, respond with ONLY the letter corresponding to your choice:
+
+    Q1: How confident are you that your answer addresses the user's question completely?
+    A) Very confident - my answer fully addresses the question
+    B) Not confident - my answer is incomplete or off-topic  
+    C) Somewhat confident - my answer partially addresses the question
+
+    Q2: How certain are you that the factual claims in your answer are accurate?
+    A) Very certain - all facts are true to the best of your knowledge
+    B) Not certain - I am unsure about the accuracy of some facts
+    C) Somewhat certain - most facts seem correct but some may need verification
+
+    Q3: How confident are you in the logical reasoning of your answer?
+    A) Very confident - my reasoning is sound and well-structured
+    B) Not confident - my reasoning has logical flaws or gaps
+    C) Somewhat confident - my reasoning is generally sound but could be improved
+
+    SCORING SYSTEM:
+    - A responses = 1.0 (high confidence)
+    - B responses = 0.0 (low confidence) 
+    - C responses = 0.5 (moderate confidence)
+
+    Your self-reflection score will be calculated as the average of these numerical values.
+
+  concise_addition: |
+    IMPORTANT INSTRUCTIONS:
+    1. Respond only with the letter corresponding to your choice.
+    2. Anything outside of AAA to CCC is invalid.
+    3. Do not include any other text in your response.
+    4. Your response should be exactly three characters long.
+
+  user_message_template: |
+    Please evaluate the correctness of my original answer to the question:
+
+    USER QUESTION: {query}
+
+    MY ORIGINAL ANSWER: {answer}
+
+  reason_codes:
+    completeness:
+      A: "My answer fully addresses the question"
+      B: "My answer is incomplete or off-topic"
+      C: "My answer partially addresses the question"
+    accuracy:
+      A: "All facts are true to the best of my knowledge"
+      B: "I am unsure about the accuracy of some facts"
+      C: "Most facts seem correct but some may need verification"
+    reasoning:
+      A: "My reasoning is sound and well-structured"
+      B: "My reasoning has logical flaws or gaps"
+      C: "My reasoning is generally sound but could be improved"

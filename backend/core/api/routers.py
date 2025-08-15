@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .chat import router as browser_window_events_router
+from .chat import router as chat_router
 
 router = APIRouter(prefix="/api")
-router.include_router(browser_window_events_router)
+router.include_router(chat_router)

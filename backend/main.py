@@ -1,9 +1,19 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.api.routers import router
+from core.config import load_config
 
-app = FastAPI(title="Browsy Recording Server", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_config()
+    yield
+
+
+app = FastAPI(title="Browsy Recording Server", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,8 +29,3 @@ app.include_router(router)
 @app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
